@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Wordtris">
+    <meta property="og:title" content="Wordtris - Tetris de Palavras">
+    <meta property="og:description" content="Junte letras na horizontal ou vertical para formar palavras e pontuar!">
+    <title>Tetris de Palavras - Wordtris</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%23f59e0b'/%3E%3Cstop offset='100%25' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Ctext x='32' y='44' font-family='sans-serif' font-weight='900' font-size='36' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%23f59e0b'/%3E%3Cstop offset='100%25' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Ctext x='32' y='44' font-family='sans-serif' font-weight='900' font-size='36' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            touch-action: manipulation;
+        }
+
+        /* Glassmorphism & Shadow Effects */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .grid-cell {
+            transition: all 0.15s ease-in-out;
+        }
+
+        .cell-pop {
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .cell-clear {
+            animation: clearFlash 0.4s ease-out forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes clearFlash {
+            0% { transform: scale(1); background-color: #f59e0b; color: #ffffff; }
+            50% { transform: scale(1.15); background-color: #10b981; color: #ffffff; box-shadow: 0 0 20px #10b981; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Prevenir seleções indesejadas no touch */
+        .no-select {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 no-select overflow-x-hidden">
+
+    <!-- Header / Navbar -->
+    <header class="w-full max-w-4xl flex items-center justify-between py-2 px-4 mb-2 glass-panel rounded-2xl shadow-xl">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-amber-500 to-indigo-600 p-2.5 rounded-xl shadow-lg">
+                <i data-lucide="boxes" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-orange-300 to-indigo-400 bg-clip-text text-transparent">
+                    WORDTRIS
+                </h1>
+                <p class="text-xs text-slate-400">Tetris de Palavras</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <a href="#play" id="btn-share" class="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500/20 to-indigo-500/20 hover:from-amber-500/30 hover:to-indigo-500/30 active:scale-95 text-amber-300 rounded-xl transition border border-amber-500/40 shadow" title="Compartilhar Link do Jogo">
+                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none">
+                    <rect x="2" y="2" width="20" height="20" rx="6" class="fill-amber-500/20 stroke-amber-400" stroke-width="1.8"/>
+                    <path d="M15 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM7 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM15 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8.8 11l4.4-2.5M8.8 13l4.4 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                <span class="text-xs font-bold hidden sm:inline">Compartilhar</span>
+            </a>
+            <button id="btn-pause" class="p-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 rounded-xl transition border border-slate-700/50 shadow" title="Pausar (P)">
+                <i data-lucide="pause" id="icon-pause" class="w-5 h-5"></i>
+            </button>
+            <button id="btn-restart" class="p-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 rounded-xl transition border border-slate-700/50 shadow" title="Reiniciar">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </button>
+            <button id="btn-help" class="p-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 rounded-xl transition border border-slate-700/50 shadow" title="Como Jogar">
+                <i data-lucide="help-circle" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="w-full max-w-4xl flex flex-col lg:flex-row items-center lg:items-start justify-center gap-4 flex-1">
+        
+        <!-- Left Side: Painel de Informações & Controles de Dificuldade -->
+        <section class="w-full lg:w-64 flex flex-col gap-3">
+            <!-- Stats Box -->
+            <div class="glass-panel p-4 rounded-2xl shadow-xl flex flex-col gap-3">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Pontuação</span>
+                    <span id="score-display" class="text-2xl font-black text-amber-400 tracking-tight">0</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Palavras</span>
+                    <span id="words-count-display" class="text-xl font-bold text-indigo-400">0</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Nível</span>
+                    <span id="level-display" class="text-xl font-bold text-emerald-400">1</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Velocidade Queda</span>
+                        <span id="speed-display" class="font-semibold text-slate-200">1.0s</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div id="speed-bar" class="bg-gradient-to-r from-indigo-500 to-amber-500 h-full w-1/4 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seleção de Dificuldade -->
+            <div class="glass-panel p-4 rounded-2xl shadow-xl">
+                <label class="block text-xs uppercase font-bold text-slate-400 tracking-wider mb-2">
+                    Dificuldade Inicial
+                </label>
+                <div class="grid grid-cols-3 gap-1.5" id="difficulty-selector">
+                    <button data-diff="easy" class="diff-btn px-2 py-2 rounded-xl text-xs font-bold transition border border-slate-700 bg-slate-800 text-slate-300 hover:border-amber-500/50">Fácil</button>
+                    <button data-diff="medium" class="diff-btn px-2 py-2 rounded-xl text-xs font-bold transition border border-amber-500/80 bg-amber-500/20 text-amber-300">Médio</button>
+                    <button data-diff="hard" class="diff-btn px-2 py-2 rounded-xl text-xs font-bold transition border border-slate-700 bg-slate-800 text-slate-300 hover:border-amber-500/50">Difícil</button>
+                </div>
+            </div>
+
+            <!-- Próxima Peça -->
+            <div class="glass-panel p-4 rounded-2xl shadow-xl flex flex-col items-center">
+                <span class="text-xs uppercase font-bold text-slate-400 tracking-wider mb-2">Próxima Letra</span>
+                <div id="next-piece-box" class="w-16 h-16 bg-slate-900/90 border border-slate-700/60 rounded-xl flex items-center justify-center text-3xl font-black text-amber-400 shadow-inner">
+                    ?
+                </div>
+            </div>
+        </section>
+
+        <!-- Center: Game Board (Grid) -->
+        <section class="relative flex flex-col items-center">
+            <div class="glass-panel p-2 sm:p-3 rounded-2xl shadow-2xl relative">
+                <!-- Board Grid (10 Colunas x 14 Linhas) -->
+                <div id="board" class="grid grid-cols-10 gap-1 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 relative overflow-hidden"
+                     style="width: min(85vw, 320px); height: min(119vw, 448px);">
+                    <!-- As células serão geradas via JS -->
+                </div>
+
+                <!-- Overlay de Pause / Game Over / Início -->
+                <div id="game-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center z-20">
+                    <div id="overlay-icon" class="p-4 bg-amber-500/20 text-amber-400 rounded-full mb-3 border border-amber-500/30">
+                        <i data-lucide="play" class="w-10 h-10"></i>
+                    </div>
+                    <h2 id="overlay-title" class="text-2xl font-extrabold text-white mb-2">Wordtris</h2>
+                    <p id="overlay-desc" class="text-sm text-slate-300 mb-6 max-w-xs">
+                        Junte letras na horizontal ou vertical para formar palavras e pontuar!
+                    </p>
+                    <button id="btn-start" class="w-full max-w-xs py-3.5 px-6 bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-amber-500/25 active:scale-95 transition">
+                        Iniciar Jogo
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Palavras Encontradas & Feed -->
+        <section class="w-full lg:w-64 flex flex-col gap-3">
+            <div class="glass-panel p-4 rounded-2xl shadow-xl flex-1 flex flex-col h-full min-h-[200px]">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                    <span class="text-xs uppercase font-bold text-slate-400 tracking-wider">Palavras Formadas</span>
+                    <i data-lucide="book-open" class="w-4 h-4 text-slate-500"></i>
+                </div>
+                <div id="words-list" class="flex-1 flex flex-col gap-1.5 overflow-y-auto max-h-56 lg:max-h-80 pr-1 custom-scrollbar text-xs">
+                    <span class="text-slate-500 text-center py-4 italic">Nenhuma palavra formada ainda</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Mobile Touch Controls -->
+    <div class="w-full max-w-md mt-2 mb-1 grid grid-cols-4 gap-2 lg:hidden px-2">
+        <button id="ctrl-left" class="py-3 bg-slate-800/90 active:bg-amber-500 active:text-slate-950 text-slate-200 rounded-xl flex items-center justify-center shadow border border-slate-700/50">
+            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+        </button>
+        <button id="ctrl-down" class="py-3 bg-slate-800/90 active:bg-amber-500 active:text-slate-950 text-slate-200 rounded-xl flex items-center justify-center shadow border border-slate-700/50">
+            <i data-lucide="arrow-down" class="w-6 h-6"></i>
+        </button>
+        <button id="ctrl-right" class="py-3 bg-slate-800/90 active:bg-amber-500 active:text-slate-950 text-slate-200 rounded-xl flex items-center justify-center shadow border border-slate-700/50">
+            <i data-lucide="arrow-right" class="w-6 h-6"></i>
+        </button>
+        <button id="ctrl-drop" class="py-3 bg-amber-500/80 active:bg-amber-400 text-slate-950 font-bold rounded-xl flex items-center justify-center shadow border border-amber-400/50">
+            <i data-lucide="chevrons-down" class="w-6 h-6"></i>
+        </button>
+    </div>
+
+    <!-- Modal de Ajuda -->
+    <div id="modal-help" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl relative">
+            <button id="btn-close-help" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <h3 class="text-xl font-bold text-amber-400 mb-3 flex items-center gap-2">
+                <i data-lucide="help-circle" class="w-5 h-5"></i> Como Jogar Wordtris
+            </h3>
+            <ul class="text-xs text-slate-300 space-y-2.5 mb-5 leading-relaxed">
+                <li class="flex items-start gap-2">
+                    <span class="bg-slate-800 px-2 py-0.5 rounded text-amber-400 font-bold">1</span>
+                    <span>Blocos individuais contendo <strong>Letras</strong> caem do topo da tela.</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="bg-slate-800 px-2 py-0.5 rounded text-amber-400 font-bold">2</span>
+                    <span>Posicione as letras lado a lado (horizontal) ou uma sobre a outra (vertical) para formar palavras válidas em português (mínimo de 3 letras).</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="bg-slate-800 px-2 py-0.5 rounded text-amber-400 font-bold">3</span>
+                    <span>Ao completar uma palavra, as letras são eliminadas e as peças acima caem!</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span class="bg-slate-800 px-2 py-0.5 rounded text-amber-400 font-bold">Controles:</span>
+                    <span><strong>Setas/WASD</strong> para mover/acelerar. <strong>Espaço</strong> para queda instantânea.</span>
+                </li>
+            </ul>
+            <button id="btn-help-ok" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">Entendido!</button>
+        </div>
+    </div>
+
+    <!-- Notificação Toast de Compartilhamento -->
+    <div id="toast-notification" class="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-emerald-400/30 flex items-center gap-2 text-xs font-bold z-50 transition-all duration-300 opacity-0 pointer-events-none translate-y-4">
+        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+        <span id="toast-message">Link do jogo copiado!</span>
+    </div>
+
+    <!-- Script Principal da Aplicação -->
+    <script>
+        /**
+         * MINI DICIONÁRIO EM PORTUGUÊS (EXPANDIDO)
+         * Otimizado em uma estrutura Trie para busca ultra-rápida.
+         */
+        const DICTIONARY_WORDS = [
+            "AMOR", "CASA", "BOLA", "VIDA", "BOM", "SOL", "MAR", "LUA", "DIA", "CEU",
+            "PAZ", "FLOR", "GATO", "CÃO", "LIVRO", "MESA", "TEMPO", "MUNDO", "HOJE", "AGORA",
+            "FOGO", "AGUA", "ARVORE", "TERRA", "PEDRA", "COR", "VERDE", "AZUL", "AMARELO", "PRETO",
+            "BRANCO", "NOITE", "LUZ", "VENTO", "RODA", "PORTA", "JANELA", "CAIXA", "PAPEL", "CANETA",
+            "RELOJIO", "SOM", "MUSA", "ARTE", "FOTO", "JOGO", "NOME", "CORPO", "BOCA", "OLHO",
+            "MAO", "PE", "PERNA", "CABELA", "DADO", "REI", "RAINHA", "PRINCEPE", "AMIGO", "PAI",
+            "MAE", "FILHO", "IRMÃO", "PÃO", "CAFE", "LEITE", "DOCE", "FRUTA", "MACA", "BANANA",
+            "BOLO", "REDE", "PRAIA", "ONDA", "NAVIO", "BARCO", "AVIAO", "CARRO", "TREM", "RUA",
+            "CIDADE", "PAIS", "MUNDO", "VIDA", "FORCA", "MENTE", "ALMA", "SONHO", "RISCO", "SORTE",
+            "VEZ", "PAR", "VALE", "COISA", "NOVO", "VELHO", "CERTO", "ALTO", "BAIXO", "FORTE",
+            "FRACO", "DURO", "MOLE", "BOM", "MAU", "GRANDE", "PEQUENO", "BELO", "FOFO", "QUENTE",
+            "FRIO", "SECO", "UMIDO", "LIMPO", "SUJO", "CEDO", "TARDE", "RÁPIDO", "LENTO", "LIVRE",
+            "PRESO", "CHEIO", "VAZIO", "LEVE", "PESADO", "DOIS", "TRES", "QUATRO", "CINCO", "DEZ",
+            "CEM", "MIL", "VER", "OLHAR", "OIR", "FALAR", "DIZER", "CANTAR", "DANÇAR", "CORRER",
+            "ANDAR", "DORMIR", "COMER", "BEBER", "RIR", "AMAR", "SENTIR", "PENSAR", "SABER", "CRIAR",
+            "FAZER", "ABRIR", "FECHAR", "GANHAR", "PERDER", "DAR", "TOMAR", "TER", "SER", "ESTAR",
+            "FICAR", "IR", "VIR", "VOLTAR", "SABIO", "POETA", "HEROI", "MENSAGEM", "IDEIA", "PLANO",
+            "METAS", "FOCO", "AÇÃO", "FATO", "TERMO", "TEXTO", "CARTA", "SINAL", "MARCA", "PONTO",
+            "LINHA", "FITA", "CAPA", "TELA", "BASE", "TOPO", "CENTRO", "FORMA", "LADO", "FRENTE"
+        ];
+
+        // Normalizador de acentos
+        function normalizeStr(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        }
+
+        // Estrutura Trie para busca eficiente
+        class TrieNode {
+            constructor() {
+                this.children = {};
+                this.isEndOfWord = false;
+            }
+        }
+
+        class Trie {
+            constructor() {
+                this.root = new TrieNode();
+            }
+
+            insert(word) {
+                let node = this.root;
+                const cleanWord = normalizeStr(word);
+                if (cleanWord.length < 3) return;
+                for (let char of cleanWord) {
+                    if (!node.children[char]) {
+                        node.children[char] = new TrieNode();
+                    }
+                    node = node.children[char];
+                }
+                node.isEndOfWord = true;
+            }
+
+            search(word) {
+                let node = this.root;
+                const cleanWord = normalizeStr(word);
+                for (let char of cleanWord) {
+                    if (!node.children[char]) return false;
+                    node = node.children[char];
+                }
+                return node.isEndOfWord;
+            }
+        }
+
+        const EXTRA_WORDS = [
+            "SOL", "LUA", "MAR", "CEU", "PAZ", "BOM", "MAL", "CAO", "MAO", "PAO",
+            "REI", "LEI", "COR", "DOR", "VOZ", "LUZ", "CRUZ", "SAL", "MEL", "SUL",
+            "FIM", "SOM", "TOM", "DOM", "ASA", "AVE", "OVO", "UVA", "RIO", "TIA",
+            "TIO", "AVO", "PAI", "MAE", "SER", "TER", "VER", "VIR", "DAR", "LER",
+            "RIR", "IR", "SOU", "FOI", "VAI", "VEM", "TEM", "SEM", "COM", "POR",
+            "PARA", "COMO", "MAS", "MAIS", "NEM", "SIM", "NAO", "QUE", "QUEM", "ONDE",
+            "AQUI", "ALI", "HOJE", "ONTEM", "CEDO", "TARDE", "NOITE", "DIA", "ANO", "MES",
+            "HORA", "MINUTO", "TEMPO", "VIDA", "MORTE", "AMOR", "ODIO", "MEDO", "FOME", "SEDE",
+            "FRIO", "CALOR", "VENTO", "CHUVA", "NEVE", "FOGO", "AGUA", "TERRA", "AR", "MATO",
+            "FLOR", "FOLHA", "GALHO", "RAIZ", "FRUTO", "SEMENTE", "CAMPO", "MONTE", "VALE", "ILHA",
+            "PRAIA", "ONDA", "AREIA", "PEDRA", "OURO", "PRATA", "FERRO", "ACO", "VIDRO", "PAPEL",
+            "PANO", "LINHA", "FIO", "CORDA", "REDE", "TELA", "CAIXA", "SACO", "BOLSA", "MALA",
+            "CHAVE", "PORTA", "MURO", "TETO", "CHAO", "SALA", "QUARTO", "BANHO", "MESA", "CAMA",
+            "SOFA", "LIVRO", "CARTA", "NOTA", "TEXTO", "NOME", "PALAVRA", "FRASE", "LETRA", "NUMERO",
+            "CONTA", "VALOR", "PRECO", "TROCO", "PAGO", "CARO", "BARATO", "NOVO", "VELHO", "RICO",
+            "POBRE", "FORTE", "FRACO", "ALTO", "BAIXO", "GORDO", "MAGRO", "BELO", "FEIO", "LIMPO",
+            "SUJO", "DOCE", "AZEDO", "AMARGO", "SALGADO", "QUENTE", "MORNO", "GELADO", "DURO", "MOLE",
+            "LEVE", "PESADO", "CHEIO", "VAZIO", "ABERTO", "FECHADO", "CERTO", "ERRADO", "FACIL", "DIFICIL",
+            "CLARO", "ESCURO", "SECO", "MOLHADO", "LISO", "ASPERO", "FINO", "GROSSO", "LARGO", "ESTREITO",
+            "CURTO", "LONGO", "RAPIDO", "LENTO", "CALMO", "BRAVO", "FELIZ", "TRISTE", "ALEGRE", "SERIO",
+            "LOUCO", "SABIO", "BOBO", "ESPERTO", "JOVEM", "IDOSO", "VIVO", "MORTO", "ACORDADO", "DORMINDO",
+            "GATO", "CACHORRO", "RATO", "PATO", "GALO", "VACA", "BOI", "PORCO", "CAVALO", "BURRO",
+            "LEAO", "TIGRE", "URSO", "LOBO", "RAPOSA", "COELHO", "MACACO", "COBRA", "SAPO", "PEIXE",
+            "TUBARAO", "BALEIA", "GOLFINHO", "AGUIA", "CORUJA", "POMBO", "ARARA", "TUCANO", "ABELHA", "FORMIGA",
+            "MOSCA", "ARANHA", "BARATA", "GRILO", "BORBOLETA", "CARACOL", "MINHOCA", "TARTARUGA", "JACARE", "CAMELO",
+            "ZEBRA", "GIRAFA", "ELEFANTE", "RINOCERONTE", "HIPOPOTAMO", "CANGURU", "PINGUIM", "FOCA", "MORCEGO", "ESQUILO",
+            "CABECA", "ROSTO", "TESTA", "OLHO", "NARIZ", "BOCA", "DENTE", "LINGUA", "ORELHA", "CABELO",
+            "PESCOCO", "OMBRO", "BRACO", "COTOVELO", "PULSO", "DEDO", "UNHA", "PEITO", "COSTAS", "BARRIGA",
+            "CINTURA", "QUADRIL", "PERNA", "JOELHO", "TORNOZELO", "PE", "CALCANHAR", "PELE", "OSSO", "SANGUE",
+            "CORACAO", "PULMAO", "ESTOMAGO", "FIGADO", "RIM", "CEREBRO", "NERVO", "MUSCULO", "VEIA", "ARTERIA",
+            "ROUPA", "CAMISA", "CALCA", "SAIA", "VESTIDO", "CASACO", "BLUSA", "MEIA", "SAPATO", "TENIS",
+            "BOTA", "CHINELO", "CHAPEU", "BONE", "OCULOS", "RELOGIO", "ANEL", "COLAR", "PULSEIRA", "BRINCO",
+            "CINTO", "GRAVATA", "LUVA", "CACHECOL", "PIJAMA", "BIQUINI", "SUNGA", "TOALHA", "LENCO", "GUARDANAPO",
+            "COMIDA", "ARROZ", "FEIJAO", "CARNE", "FRANGO", "OVO", "MASSA", "MACARRAO", "PIZZA", "SOPA",
+            "SALADA", "LEGUME", "VERDURA", "BATATA", "TOMATE", "CEBOLA", "ALHO", "CENOURA", "ALFACE", "MILHO",
+            "TRIGO", "AVEIA", "FARINHA", "ACUCAR", "OLEO", "AZEITE", "VINAGRE", "MOLHO", "TEMPERO", "PIMENTA",
+            "QUEIJO", "MANTEIGA", "IOGURTE", "SORVETE", "BOLO", "TORTA", "BISCOITO", "CHOCOLATE", "BALA", "CHICLETE",
+            "SUCO", "REFRIGERANTE", "CHA", "CAFE", "LEITE", "VINHO", "CERVEJA", "AGUA", "GELO", "COPO",
+            "XICARA", "PRATO", "TIGELA", "GARFO", "FACA", "COLHER", "PANELA", "FRIGIDEIRA", "FORNO", "FOGAO",
+            "GELADEIRA", "PIA", "TORNEIRA", "ESPONJA", "SABAO", "DETERGENTE", "VASSOURA", "RODO", "BALDE", "LIXO",
+            "CARRO", "MOTO", "ONIBUS", "CAMINHAO", "TREM", "METRO", "AVIAO", "HELICOPTERO", "NAVIO", "BARCO",
+            "CANOA", "BICICLETA", "PATINS", "SKATE", "RODA", "PNEU", "MOTOR", "VOLANTE", "FREIO", "FAROL",
+            "RUA", "AVENIDA", "ESTRADA", "PONTE", "TUNEL", "PRACA", "PARQUE", "JARDIM", "FLORESTA", "SELVA",
+            "DESERTO", "CIDADE", "VILA", "BAIRRO", "CENTRO", "PAIS", "ESTADO", "MUNDO", "PLANETA", "ESTRELA",
+            "SOL", "LUA", "NUVEM", "RAIO", "TROVAO", "ARCO", "IRIS", "NEBLINA", "ORVALHO", "GEADA",
+            "JOGO", "BOLA", "DADO", "CARTA", "TABULEIRO", "PECA", "TIME", "EQUIPE", "JOGADOR", "JUIZ",
+            "GOL", "PONTO", "PLACAR", "VITORIA", "DERROTA", "EMPATE", "PREMIO", "TROFEU", "MEDALHA", "CAMPEAO",
+            "MUSICA", "SOM", "NOTA", "RITMO", "MELODIA", "CANCAO", "LETRA", "VOZ", "CORO", "BANDA",
+            "VIOLAO", "GUITARRA", "PIANO", "TECLADO", "BATERIA", "FLAUTA", "VIOLINO", "TROMPETE", "TAMBOR", "SINO",
+            "ARTE", "PINTURA", "QUADRO", "DESENHO", "COR", "TINTA", "PINCEL", "LAPIS", "CANETA", "BORRACHA",
+            "REGUA", "TESOURA", "COLA", "CADERNO", "LIVRO", "REVISTA", "JORNAL", "FOLHA", "PAGINA", "CAPA",
+            "ESCOLA", "AULA", "CURSO", "PROVA", "NOTA", "ALUNO", "PROFESSOR", "DIRETOR", "SALA", "QUADRO",
+            "GIZ", "APAGADOR", "CARTEIRA", "MOCHILA", "ESTOJO", "ESTUDO", "LEITURA", "ESCRITA", "CONTA", "CIENCIA"
+        ];
+
+        const dictionaryTrie = new Trie();
+        DICTIONARY_WORDS.forEach(w => dictionaryTrie.insert(w));
+        EXTRA_WORDS.forEach(w => dictionaryTrie.insert(w));
+
+        /**
+         * CONFIGURAÇÕES E ESTADO DO JOGO
+         */
+        const ROWS = 14;
+        const COLS = 10;
+
+        // Distribuição ponderada de letras em Português para facilitar a formação de palavras
+        const LETTER_POOL = "AAAAAAAAEEEEEEEEIIIIIIOOOOOOUUUSSSSRRRRNNNNMMMMDDDDLLLLTTTTCCCCPPPPBBGGVVFFHHJZQ";
+
+        function getRandomLetter() {
+            return LETTER_POOL[Math.floor(Math.random() * LETTER_POOL.length)];
+        }
+
+        // Configurações de Dificuldade (Velocidade fixa em ms)
+        const DIFFICULTY_SETTINGS = {
+            easy: { initialSpeed: 1000 },
+            medium: { initialSpeed: 700 },
+            hard: { initialSpeed: 450 }
+        };
+
+        let grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        let activePiece = null;
+        let nextLetter = getRandomLetter();
+        let score = 0;
+        let wordsCount = 0;
+        let level = 1;
+        let currentDifficulty = 'medium';
+        let dropInterval = DIFFICULTY_SETTINGS.medium.initialSpeed;
+        let gameLoopTimer = null;
+        let isPaused = false;
+        let isGameOver = false;
+        let isGameStarted = false;
+        let isClearing = false;
+        let foundWordsHistory = [];
+
+        // Referências do DOM
+        const boardEl = document.getElementById('board');
+        const overlayEl = document.getElementById('game-overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const overlayDesc = document.getElementById('overlay-desc');
+        const overlayIcon = document.getElementById('overlay-icon');
+        const btnStart = document.getElementById('btn-start');
+        const btnPause = document.getElementById('btn-pause');
+        const iconPause = document.getElementById('icon-pause');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnShare = document.getElementById('btn-share');
+        const toastNotification = document.getElementById('toast-notification');
+        const toastMessage = document.getElementById('toast-message');
+        const btnHelp = document.getElementById('btn-help');
+        const modalHelp = document.getElementById('modal-help');
+        const btnCloseHelp = document.getElementById('btn-close-help');
+        const btnHelpOk = document.getElementById('btn-help-ok');
+        
+        const scoreDisplay = document.getElementById('score-display');
+        const wordsCountDisplay = document.getElementById('words-count-display');
+        const levelDisplay = document.getElementById('level-display');
+        const speedDisplay = document.getElementById('speed-display');
+        const speedBar = document.getElementById('speed-bar');
+        const nextPieceBox = document.getElementById('next-piece-box');
+        const wordsListEl = document.getElementById('words-list');
+
+        // Inicializar Grade no HTML
+        function initBoardUI() {
+            boardEl.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.className = `grid-cell flex items-center justify-center font-black text-sm rounded-lg border border-slate-800/40 bg-slate-900/40 text-slate-400 select-none`;
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        // Atualizar renderização da Grade
+        function renderBoard() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cellIndex = r * COLS + c;
+                    const cellEl = boardEl.children[cellIndex];
+                    const cellValue = grid[r][c];
+
+                    // Se a peça ativa ocupa esta posição
+                    const isActive = activePiece && activePiece.row === r && activePiece.col === c;
+
+                    if (isActive) {
+                        cellEl.textContent = activePiece.letter;
+                        cellEl.className = `grid-cell flex items-center justify-center font-black text-base rounded-lg bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/30 border border-amber-300 scale-105 z-10`;
+                    } else if (cellValue) {
+                        cellEl.textContent = cellValue.letter;
+                        if (cellValue.clearing) {
+                            cellEl.className = `grid-cell cell-clear flex items-center justify-center font-black text-base rounded-lg text-white font-bold`;
+                        } else {
+                            cellEl.className = `grid-cell flex items-center justify-center font-black text-base rounded-lg bg-slate-800 text-slate-100 border border-slate-700/80 shadow-sm`;
+                        }
+                    } else {
+                        cellEl.textContent = '';
+                        cellEl.className = `grid-cell flex items-center justify-center font-black text-sm rounded-lg border border-slate-800/40 bg-slate-900/40 text-slate-400`;
+                    }
+                }
+            }
+        }
+
+        // Gerar nova peça caindo
+        function spawnPiece() {
+            const letter = nextLetter;
+            nextLetter = getRandomLetter();
+            nextPieceBox.textContent = nextLetter;
+
+            activePiece = {
+                row: 0,
+                col: Math.floor(COLS / 2) - 1,
+                letter: letter
+            };
+
+            // Verificar Game Over imediato
+            if (grid[activePiece.row][activePiece.col] !== null) {
+                endGame();
+            }
+        }
+
+        // Mover peça ativa
+        function movePiece(dRow, dCol) {
+            if (!activePiece || isPaused || isGameOver || isClearing) return false;
+
+            const newRow = activePiece.row + dRow;
+            const newCol = activePiece.col + dCol;
+
+            // Limites da grade
+            if (newCol < 0 || newCol >= COLS || newRow >= ROWS) {
+                return false;
+            }
+
+            // Colisão com blocos já parados
+            if (newRow >= 0 && grid[newRow][newCol] !== null) {
+                return false;
+            }
+
+            activePiece.row = newRow;
+            activePiece.col = newCol;
+            renderBoard();
+            return true;
+        }
+
+        // Queda Instantânea (Hard Drop)
+        function hardDrop() {
+            if (!activePiece || isPaused || isGameOver || isClearing) return;
+            while (movePiece(1, 0)) {}
+            lockPiece();
+        }
+
+        // Fixar peça na grade
+        function lockPiece() {
+            if (!activePiece || isClearing) return;
+
+            grid[activePiece.row][activePiece.col] = {
+                letter: activePiece.letter,
+                clearing: false
+            };
+            activePiece = null;
+            renderBoard();
+
+            // Verificar se formou palavras após a peça cair
+            checkAndClearWords();
+        }
+
+        // Loop de Gravidade Principal
+        function gameLoop() {
+            if (isPaused || isGameOver || isClearing) return;
+
+            if (activePiece) {
+                if (!movePiece(1, 0)) {
+                    lockPiece();
+                }
+            }
+        }
+
+        // Verificar e Destruir Palavras no Tabuleiro
+        function checkAndClearWords() {
+            let matchedCoords = new Set();
+            let matchedWords = [];
+
+            // 1. Checar Horizontais (Tamanho mínimo 3, ambas as direções)
+            for (let r = 0; r < ROWS; r++) {
+                for (let startCol = 0; startCol < COLS; startCol++) {
+                    for (let endCol = startCol + 2; endCol < COLS; endCol++) {
+                        let word = "";
+                        let coords = [];
+                        let valid = true;
+
+                        for (let c = startCol; c <= endCol; c++) {
+                            if (grid[r][c] === null) {
+                                valid = false;
+                                break;
+                            }
+                            word += grid[r][c].letter;
+                            coords.push({ r, c });
+                        }
+
+                        if (valid) {
+                            const reversedWord = word.split('').reverse().join('');
+                            if (dictionaryTrie.search(word)) {
+                                matchedWords.push(word);
+                                coords.forEach(pt => matchedCoords.add(`${pt.r},${pt.c}`));
+                            } else if (dictionaryTrie.search(reversedWord)) {
+                                matchedWords.push(reversedWord);
+                                coords.forEach(pt => matchedCoords.add(`${pt.r},${pt.c}`));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Checar Verticais (Tamanho mínimo 3, ambas as direções)
+            for (let c = 0; c < COLS; c++) {
+                for (let startRow = 0; startRow < ROWS; startRow++) {
+                    for (let endRow = startRow + 2; endRow < ROWS; endRow++) {
+                        let word = "";
+                        let coords = [];
+                        let valid = true;
+
+                        for (let r = startRow; r <= endRow; r++) {
+                            if (grid[r][c] === null) {
+                                valid = false;
+                                break;
+                            }
+                            word += grid[r][c].letter;
+                            coords.push({ r, c });
+                        }
+
+                        if (valid) {
+                            const reversedWord = word.split('').reverse().join('');
+                            if (dictionaryTrie.search(word)) {
+                                matchedWords.push(word);
+                                coords.forEach(pt => matchedCoords.add(`${pt.r},${pt.c}`));
+                            } else if (dictionaryTrie.search(reversedWord)) {
+                                matchedWords.push(reversedWord);
+                                coords.forEach(pt => matchedCoords.add(`${pt.r},${pt.c}`));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Se encontrou palavras válidas
+            if (matchedCoords.size > 0) {
+                isClearing = true;
+                const uniqueWords = [...new Set(matchedWords)];
+
+                // Animação de remoção
+                matchedCoords.forEach(coordStr => {
+                    const [r, c] = coordStr.split(',').map(Number);
+                    if (grid[r][c]) grid[r][c].clearing = true;
+                });
+
+                renderBoard();
+
+                // Processar pontuação e remoção após animação
+                setTimeout(() => {
+                    matchedCoords.forEach(coordStr => {
+                        const [r, c] = coordStr.split(',').map(Number);
+                        grid[r][c] = null;
+                    });
+
+                    // Atualizar estatísticas
+                    uniqueWords.forEach(w => {
+                        score += w.length * 100 * level;
+                        wordsCount++;
+                        addWordToHistory(w);
+                    });
+
+                    updateLevelProgress();
+                    applyGravity();
+                    renderBoard();
+
+                    // Reverificar palavras encadeadas (reação em cadeia)
+                    checkAndClearWords();
+                }, 400);
+
+            } else {
+                isClearing = false;
+                // Caso não tenha palavras, gera a próxima peça
+                spawnPiece();
+                renderBoard();
+            }
+        }
+
+        // Fazer os blocos suspensos caírem com a gravidade
+        function applyGravity() {
+            for (let c = 0; c < COLS; c++) {
+                let emptyRow = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (grid[r][c] !== null) {
+                        if (r !== emptyRow) {
+                            grid[emptyRow][c] = grid[r][c];
+                            grid[r][c] = null;
+                        }
+                        emptyRow--;
+                    }
+                }
+            }
+        }
+
+        // Atualizar lista de palavras formadas na UI
+        function addWordToHistory(word) {
+            foundWordsHistory.unshift(word);
+            if (wordsListEl.children.length === 1 && wordsListEl.children[0].tagName === 'SPAN') {
+                wordsListEl.innerHTML = '';
+            }
+
+            const item = document.createElement('div');
+            item.className = 'flex justify-between items-center bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-lg text-amber-300 font-bold tracking-wider animate-bounce-once';
+            item.innerHTML = `
+                <span>${word}</span>
+                <span class="text-[10px] text-slate-400 font-normal">+${word.length * 100 * level} pts</span>
+            `;
+            wordsListEl.insertBefore(item, wordsListEl.firstChild);
+        }
+
+        // Atualizar Nível e Manter Velocidade Constante
+        function updateLevelProgress() {
+            const newLevel = Math.floor(wordsCount / 5) + 1;
+            if (newLevel !== level) {
+                level = newLevel;
+            }
+
+            // Manter a velocidade fixa de acordo com a dificuldade selecionada
+            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+            dropInterval = settings.initialSpeed;
+
+            // Atualizar UI
+            scoreDisplay.textContent = score;
+            wordsCountDisplay.textContent = wordsCount;
+            levelDisplay.textContent = level;
+            speedDisplay.textContent = `${(dropInterval / 1000).toFixed(2)}s`;
+
+            // Atualizar barra de progresso de velocidade conforme dificuldade
+            const speedPercent = currentDifficulty === 'easy' ? 33 : (currentDifficulty === 'medium' ? 66 : 100);
+            speedBar.style.width = `${speedPercent}%`;
+
+            // Reiniciar timer com a velocidade da dificuldade
+            if (gameLoopTimer) clearInterval(gameLoopTimer);
+            gameLoopTimer = setInterval(gameLoop, dropInterval);
+        }
+
+        // Iniciar Novo Jogo
+        function startGame() {
+            grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            score = 0;
+            wordsCount = 0;
+            level = 1;
+            isPaused = false;
+            isGameOver = false;
+            isGameStarted = true;
+            isClearing = false;
+            foundWordsHistory = [];
+            wordsListEl.innerHTML = '<span class="text-slate-500 text-center py-4 italic">Nenhuma palavra formada ainda</span>';
+
+            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+            dropInterval = settings.initialSpeed;
+
+            updateLevelProgress();
+            overlayEl.classList.add('hidden');
+            
+            spawnPiece();
+            renderBoard();
+
+            if (gameLoopTimer) clearInterval(gameLoopTimer);
+            gameLoopTimer = setInterval(gameLoop, dropInterval);
+
+            // Atualizar ícone de pausa
+            iconPause.setAttribute('data-lucide', 'pause');
+            lucide.createIcons();
+        }
+
+        // Pausar / Despausar Jogo
+        function togglePause() {
+            if (!isGameStarted || isGameOver) return;
+            isPaused = !isPaused;
+
+            if (isPaused) {
+                overlayTitle.textContent = "Jogo Pausado";
+                overlayDesc.textContent = "Pressione Iniciar ou P para continuar de onde parou.";
+                overlayIcon.innerHTML = `<i data-lucide="pause" class="w-10 h-10"></i>`;
+                btnStart.textContent = "Continuar";
+                overlayEl.classList.remove('hidden');
+                iconPause.setAttribute('data-lucide', 'play');
+            } else {
+                overlayEl.classList.add('hidden');
+                iconPause.setAttribute('data-lucide', 'pause');
+            }
+            lucide.createIcons();
+        }
+
+        // Encerrar Jogo (Game Over)
+        function endGame() {
+            isGameOver = true;
+            isGameStarted = false;
+            if (gameLoopTimer) clearInterval(gameLoopTimer);
+
+            overlayTitle.textContent = "Fim de Jogo!";
+            overlayDesc.textContent = `Você fez ${score} pontos e encontrou ${wordsCount} palavras.`;
+            overlayIcon.innerHTML = `<i data-lucide="trophy" class="w-10 h-10 text-amber-400"></i>`;
+            btnStart.textContent = "Jogar Novamente";
+            overlayEl.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        /**
+         * EVENTOS DE CONTROLE (Teclado, Touch & UI)
+         */
+        // Teclado
+        document.addEventListener('keydown', (e) => {
+            if (!isGameStarted || isPaused) {
+                if (e.key === 'p' || e.key === 'P') togglePause();
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    movePiece(0, -1);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    movePiece(0, 1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    movePiece(1, 0);
+                    break;
+                case ' ':
+                    hardDrop();
+                    break;
+                case 'p':
+                case 'P':
+                    togglePause();
+                    break;
+            }
+        });
+
+        // Controles Mobile / Touch
+        document.getElementById('ctrl-left').addEventListener('click', () => movePiece(0, -1));
+        document.getElementById('ctrl-right').addEventListener('click', () => movePiece(0, 1));
+        document.getElementById('ctrl-down').addEventListener('click', () => movePiece(1, 0));
+        document.getElementById('ctrl-drop').addEventListener('click', () => hardDrop());
+
+        // Botões da Interface
+        btnStart.addEventListener('click', () => {
+            if (isPaused) {
+                togglePause();
+            } else {
+                startGame();
+            }
+        });
+
+        btnPause.addEventListener('click', togglePause);
+        btnRestart.addEventListener('click', startGame);
+
+        // Função de Compartilhamento
+        function showToast(msg) {
+            toastMessage.textContent = msg;
+            toastNotification.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+            setTimeout(() => {
+                toastNotification.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+            }, 3000);
+        }
+
+        btnShare.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const baseUrl = window.location.href.split('#')[0];
+            const shareUrl = `${baseUrl}#play`;
+            btnShare.setAttribute('href', shareUrl);
+            const shareData = {
+                title: 'Wordtris - Tetris de Palavras',
+                text: 'Venha jogar Wordtris! Clique no ícone/link para abrir o jogo:',
+                url: shareUrl
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                }
+            }
+
+            // Fallback para copiar o link para a área de transferência
+            const tempInput = document.createElement('input');
+            tempInput.value = shareUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('Link direto do jogo copiado!');
+        });
+
+        // Modal de Ajuda
+        btnHelp.addEventListener('click', () => modalHelp.classList.remove('hidden'));
+        btnCloseHelp.addEventListener('click', () => modalHelp.classList.add('hidden'));
+        btnHelpOk.addEventListener('click', () => modalHelp.classList.add('hidden'));
+
+        // Seleção de Dificuldade
+        const diffButtons = document.querySelectorAll('.diff-btn');
+        diffButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                diffButtons.forEach(b => {
+                    b.className = "diff-btn px-2 py-2 rounded-xl text-xs font-bold transition border border-slate-700 bg-slate-800 text-slate-300 hover:border-amber-500/50";
+                });
+                const selected = e.currentTarget;
+                selected.className = "diff-btn px-2 py-2 rounded-xl text-xs font-bold transition border border-amber-500/80 bg-amber-500/20 text-amber-300";
+                currentDifficulty = selected.dataset.diff;
+
+                if (isGameStarted && !isGameOver) {
+                    updateLevelProgress();
+                }
+            });
+        });
+
+        // Inicialização na Carga da Janela
+        window.onload = function() {
+            lucide.createIcons();
+            initBoardUI();
+            renderBoard();
+            const baseUrl = window.location.href.split('#')[0];
+            btnShare.setAttribute('href', `${baseUrl}#play`);
+            if (window.location.hash === '#play') {
+                startGame();
+            }
+        };
+    </script>
+</body>
+</html>
